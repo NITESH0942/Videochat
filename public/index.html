@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Chat App</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div id="join-screen" class="screen">
+        <div class="join-container">
+            <h1>Video Chat App</h1>
+            <div class="input-group">
+                <input type="text" id="user-name" placeholder="Enter your name" maxlength="20">
+            </div>
+            <div class="input-group">
+                <input type="text" id="room-id" placeholder="Room ID (leave empty for new room)" maxlength="50">
+            </div>
+            <button id="join-btn" class="btn btn-primary">Join Room</button>
+        </div>
+    </div>
+
+    <div id="chat-screen" class="screen hidden">
+        <div class="chat-container">
+            <div class="header">
+                <h2 id="room-title">Room: <span id="room-display"></span></h2>
+                <button id="leave-btn" class="btn btn-secondary">Leave Room</button>
+            </div>
+
+            <div class="main-content">
+                <div class="video-section">
+                    <div id="video-grid" class="video-grid">
+                        <div class="video-container">
+                            <video id="local-video" autoplay muted playsinline></video>
+                            <div class="video-label">
+                                <span id="local-name">You</span>
+                                <div class="video-controls-local">
+                                    <button id="toggle-video" class="control-btn" title="Toggle Video">
+                                        <span>📹</span>
+                                    </button>
+                                    <button id="toggle-audio" class="control-btn" title="Toggle Audio">
+                                        <span>🎤</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-section">
+                    <div class="chat-header">
+                        <h3>Chat</h3>
+                    </div>
+                    <div id="chat-messages" class="chat-messages"></div>
+                    <div class="chat-input-container">
+                        <input type="text" id="chat-input" placeholder="Type a message..." maxlength="500">
+                        <button id="send-btn" class="btn btn-primary">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
