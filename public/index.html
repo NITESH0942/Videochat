@@ -8,6 +8,10 @@
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <!-- Join Screen -->
     <div id="join-screen" class="screen">
         <div class="join-container">
             <h1>Video Chat App</h1>
@@ -17,47 +21,187 @@
             <div class="input-group">
                 <input type="text" id="room-id" placeholder="Room ID (leave empty for new room)" maxlength="50">
             </div>
+            <div class="input-group">
+                <input type="password" id="room-password" placeholder="Room Password (optional)" maxlength="50">
+            </div>
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="start-with-video" checked>
+                    Start with video
+                </label>
+                <label>
+                    <input type="checkbox" id="start-with-audio" checked>
+                    Start with audio
+                </label>
+            </div>
             <button id="join-btn" class="btn btn-primary">Join Room</button>
+            <button id="create-room-btn" class="btn btn-secondary create-room-btn">Create New Room</button>
         </div>
     </div>
 
+    <!-- Chat Screen -->
     <div id="chat-screen" class="screen hidden">
         <div class="chat-container">
+            <!-- Header -->
             <div class="header">
-                <h2 id="room-title">Room: <span id="room-display"></span></h2>
-                <button id="leave-btn" class="btn btn-secondary">Leave Room</button>
+                <div class="header-left">
+                    <h2 id="room-title">Room: <span id="room-display"></span></h2>
+                    <div id="connection-status" class="connection-status" title="Connection Status">
+                        <span class="status-indicator"></span>
+                        <span class="status-text">Connecting...</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button id="settings-btn" class="btn btn-icon" title="Settings">⚙️</button>
+                    <button id="copy-room-id" class="btn btn-icon" title="Copy Room ID">📋</button>
+                    <button id="leave-btn" class="btn btn-secondary">Leave Room</button>
+                </div>
             </div>
 
             <div class="main-content">
+                <!-- Video Section -->
                 <div class="video-section">
                     <div id="video-grid" class="video-grid">
                         <div class="video-container">
                             <video id="local-video" autoplay muted playsinline></video>
+                            <canvas id="local-blur-canvas" class="blur-canvas hidden"></canvas>
                             <div class="video-label">
                                 <span id="local-name">You</span>
                                 <div class="video-controls-local">
+                                    <button id="screen-share-btn" class="control-btn" title="Share Screen">
+                                        <span>🖥️</span>
+                                    </button>
                                     <button id="toggle-video" class="control-btn" title="Toggle Video">
                                         <span>📹</span>
                                     </button>
                                     <button id="toggle-audio" class="control-btn" title="Toggle Audio">
                                         <span>🎤</span>
                                     </button>
+                                    <button id="background-blur-btn" class="control-btn" title="Blur Background">
+                                        <span>🎭</span>
+                                    </button>
                                 </div>
                             </div>
+                            <div class="screen-share-indicator hidden">Screen Sharing</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="chat-section">
-                    <div class="chat-header">
-                        <h3>Chat</h3>
+                <!-- Sidebar -->
+                <div class="sidebar">
+                    <!-- Users List Tab -->
+                    <div class="sidebar-tabs">
+                        <button class="sidebar-tab active" data-tab="chat">💬 Chat</button>
+                        <button class="sidebar-tab" data-tab="users">👥 Users</button>
+                        <button class="sidebar-tab" data-tab="private">🔒 Private</button>
                     </div>
-                    <div id="chat-messages" class="chat-messages"></div>
-                    <div class="chat-input-container">
-                        <input type="text" id="chat-input" placeholder="Type a message..." maxlength="500">
-                        <button id="send-btn" class="btn btn-primary">Send</button>
+
+                    <!-- Chat Panel -->
+                    <div id="chat-panel" class="sidebar-panel active">
+                        <div class="chat-header">
+                            <h3>Chat</h3>
+                            <div class="chat-actions">
+                                <button id="search-chat-btn" class="btn-icon-small" title="Search">🔍</button>
+                                <button id="chat-menu-btn" class="btn-icon-small" title="Menu">⋮</button>
+                            </div>
+                        </div>
+                        <div id="pinned-message" class="pinned-message hidden"></div>
+                        <div id="chat-messages" class="chat-messages"></div>
+                        <div id="typing-indicators" class="typing-indicators"></div>
+                        <div class="chat-input-container">
+                            <div class="chat-input-actions">
+                                <button id="emoji-btn" class="btn-icon-small" title="Emoji">😊</button>
+                                <button id="file-btn" class="btn-icon-small" title="Attach File">📎</button>
+                                <input type="file" id="file-input" class="hidden" accept="image/*,video/*,.pdf,.doc,.docx" title="Attach file">
+                            </div>
+                            <input type="text" id="chat-input" placeholder="Type a message..." maxlength="500">
+                            <button id="send-btn" class="btn btn-primary">Send</button>
+                        </div>
+                    </div>
+
+                    <!-- Users Panel -->
+                    <div id="users-panel" class="sidebar-panel">
+                        <div class="users-list-header">
+                            <h3>Participants (<span id="user-count">0</span>)</h3>
+                        </div>
+                        <div id="users-list" class="users-list"></div>
+                    </div>
+
+                    <!-- Private Messages Panel -->
+                    <div id="private-panel" class="sidebar-panel">
+                        <div class="private-header">
+                            <h3>Private Messages</h3>
+                        </div>
+                        <div id="private-messages" class="private-messages"></div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emoji Picker Modal -->
+    <div id="emoji-picker" class="emoji-picker hidden">
+        <div class="emoji-picker-header">
+            <span>Select Emoji</span>
+            <button id="close-emoji" class="btn-close">×</button>
+        </div>
+        <div class="emoji-grid">
+            😀 😃 😄 😁 😆 😅 🤣 😂 🙂 🙃 😉 😊 😇 🥰 😍 🤩 😘 😗 ☺️ 😚 😙 🥲 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🤫 🤔 🤐 🤨 😐 😑 😶 😶‍🌫️ 😏 😒 🙄 😬 🤥 😌 😔 😪 🤤 😴 😷 🤒 🤕 🤢 🤮 🤧 🥵 🥶 😶‍🌫️ 😱 😨 😰 😥 😓 🤗 🤔 🤭 🤫 🤥 😶 😐 😑 😬 🙄 😯 😦 😧 😮 😲 🥱 😴 🤤 😪 😵 😵‍💫 🤐 🥴 🤢 🤮 🤧 😷 🤒 🤕 🤑 🤠 😈 👿 👹 👺 🤡 💩 👻 💀 ☠️ 👽 👾 🤖 🎃 😺 😸 😹 😻 😼 😽 🙀 😿 😾
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Settings</h3>
+                <button id="close-settings" class="btn-close">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h4>Video Quality</h4>
+                    <select id="video-quality" title="Video quality setting">
+                        <option value="high">High (HD)</option>
+                        <option value="medium" selected>Medium (SD)</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+                <div class="settings-section">
+                    <h4>Audio Quality</h4>
+                    <select id="audio-quality" title="Audio quality setting">
+                        <option value="high" selected>High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+                <div class="settings-section">
+                    <h4>Camera</h4>
+                    <select id="camera-select" title="Camera device"></select>
+                </div>
+                <div class="settings-section">
+                    <h4>Microphone</h4>
+                    <select id="microphone-select" title="Microphone device"></select>
+                </div>
+                <div class="settings-section">
+                    <label>
+                        <input type="checkbox" id="notifications-enabled" checked>
+                        Enable Notifications
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Modal -->
+    <div id="search-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Search Messages</h3>
+                <button id="close-search" class="btn-close">×</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="search-input" placeholder="Search in messages...">
+                <div id="search-results" class="search-results"></div>
             </div>
         </div>
     </div>
@@ -65,4 +209,3 @@
     <script src="app.js"></script>
 </body>
 </html>
-
